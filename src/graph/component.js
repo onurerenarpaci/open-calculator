@@ -48,25 +48,33 @@ class Component {
     set transform(matrix){
         this.#transform = matrix;
     }
+
+    get options(){
+        return this.#options;
+    }
+
+    set options(options){
+        this.#options = options;
+    }
         
     get transform(){
         return this.#transform;
     }
 
-    draw(){
+    draw(gl, program){
         if(this.points.length === 0 || (this.#options.elementMode && this.#indexes.length === 0))
             throw new Error("Component: No points to draw");
 
         if(this.#options.elementMode){
-            this.#drawElementMode();
+            this.#drawElementMode(gl, program);
         }else{
-            this.#drawArrayMode();
+            this.#drawArrayMode(gl, program);
         }
     }
 
-    #drawElementMode(){
-        const gl = this.#gl;
-        const program = this.#program;
+    #drawElementMode(gl, program){
+        // const gl = this.#gl;
+        // const program = this.#program;
         const points = this.#points;
         const indexes = this.#indexes;
 
@@ -102,7 +110,7 @@ class Component {
         gl.drawElements(primitive, count, gl.UNSIGNED_SHORT, offset);
     }
 
-    #drawArrayMode(){
+    #drawArrayMode(gl, program){
         throw new Error("Not implemented: Array Mode");
     }
 
@@ -180,38 +188,6 @@ class Surface extends Component {
         return line_indexes;
     }
 }
-
-// class Axis extends Component {
-//     constructor(gl, program) {
-//         super(gl, program, {
-//             primitive: gl.LINES, 
-//             color: [0, 1, 0, 1]
-//         });
-
-//         this.points = this.#createPoints();
-//         this.indexes = this.#createIndexes();
-//     }
-
-//     #createPoints() {
-//         return [
-//             0, 0, 0, 1,
-//             0, 0, 3, 1,
-//             0, 0, 0, 1,
-//             0, 3, 0, 1,
-//             0, 0, 0, 1,
-//             3, 0, 0, 1
-//         ];
-//     }
-
-//     #createIndexes() {
-//         return [
-//             0, 1,
-//             2, 3,
-//             4, 5
-//         ];
-//     }
-
-// }
 
 class Axis extends Component {
     constructor(gl, program, axe, color) {

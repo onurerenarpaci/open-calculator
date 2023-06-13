@@ -7,5 +7,5 @@ export const formulaState = atom({
 
 export const mathExpressionsState = atom({
     key: 'mathExpressionsState',
-    default: [''],
+    default: [{formula:'', color:{ r: 173, g: 255, b: 47 }}],
 });

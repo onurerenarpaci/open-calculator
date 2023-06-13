@@ -42,14 +42,27 @@ const Sidebar = () => {
         useRecoilState(mathExpressionsState);
 
     const addExpression = () => {
-        setMathExpressions([...mathExpressions, ""]);
+        setMathExpressions([...mathExpressions, {formula:"", color:{ r: 173, g: 255, b: 47 }}]);
+    };
+
+    const removeExpression = (index) => {
+        const newMathExpressions = [...mathExpressions];
+        newMathExpressions.splice(index, 1);
+        setMathExpressions(newMathExpressions);
     };
 
     const onExpressionChange = (e, index) => {
-        const newMathExpressions = [...mathExpressions];
-        newMathExpressions[index] = e.target.value;
+        const newMathExpressions = structuredClone(mathExpressions);
+        newMathExpressions[index].formula = e.target.value;
         setMathExpressions(newMathExpressions);
     };
+
+    const onColorChange = (color, event, index) => {
+      const newMathExpressions = structuredClone(mathExpressions);
+      newMathExpressions[index].color = color.rgb
+      setMathExpressions(newMathExpressions);
+    };
+
 
     return (
         <Box p={5} pr={0} flex="1" maxH={"100vh"} overflowY={"scroll"}>
@@ -67,7 +80,7 @@ const Sidebar = () => {
                             <Popover>
                                 <PopoverTrigger>
                                     <Button
-                                        backgroundColor="#234233"
+                                        backgroundColor={`rgb(${expression.color.r}, ${expression.color.g}, ${expression.color.b})`}
                                         borderRadius={50}
                                     ></Button>
                                 </PopoverTrigger>
@@ -75,16 +88,16 @@ const Sidebar = () => {
                                     <PopoverArrow />
                                     <PopoverCloseButton />
                                     <PopoverBody>
-                                        <CirclePicker />
+                                        <CirclePicker color={expression.color} onChangeComplete={(color, event) => {onColorChange(color, event, index)}}/>
                                     </PopoverBody>
                                 </PopoverContent>
                             </Popover>
                         </Box>
                         <Box w="100%">
-                            {index + 1 == inputFocus || expression == "" ? (
+                            {index + 1 == inputFocus || expression.formula == "" ? (
                                 <Input
                                     key={index}
-                                    value={expression}
+                                    value={expression.formula}
                                     onChange={(e) =>
                                         onExpressionChange(e, index)
                                     }
@@ -108,7 +121,7 @@ const Sidebar = () => {
                                     p={2}
                                 >
                                     <MathComponent
-                                        tex={expression}
+                                        tex={expression.formula}
                                         display={{}}
                                     />
                                 </Box>
@@ -119,7 +132,7 @@ const Sidebar = () => {
                                 variant="ghost"
                                 colorScheme="red"
                                 aria-label="Delete expression"
-                                onClick={() => {}}
+                                onClick={() => {removeExpression(index)}}
                                 icon={<Icon as={BsTrash} />}
                             />
                         </Box>
@@ -132,9 +145,9 @@ const Sidebar = () => {
                             borderRadius={50}
                         ></Button>
                     </Box>
-                    <Box w="100%">
+                    <Box w="100%" pr={5}>
                         <Input
-                            placeholder="Enter an expression"
+                            placeholder="Add an expression"
                             size="lg"
                             variant="filled"
                             width="100%"

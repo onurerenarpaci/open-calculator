@@ -1,6 +1,8 @@
 import m4 from './util/m4.js';
 import vshader from './shader/vshader';
 import fshader from './shader/fshader';
+import phfshader from './shader/phong/fshader';
+import phvshader from './shader/phong/vshader';
 import { createProgramFromSources } from './util/shader';
 import { Surface, Axis } from './component.js';
 import { scan, parse, interpret } from './util/codegen.js';
@@ -24,6 +26,7 @@ class Controller {
     }
 
     this.#gl = context;
+    this.#gl.enable(this.#gl.DEPTH_TEST);
 
     this.#program = createProgramFromSources(context, vshader, fshader);
     this.#gl.useProgram(this.#program);
@@ -84,20 +87,25 @@ class Controller {
     const offsetLoc = gl.getUniformLocation(program, 'u_view');
     gl.uniformMatrix4fv(offsetLoc, false, viewMatrix);
 
-    this.#surfaces.forEach(s => s.draw());
-    this.#axisX.draw();
-    this.#axisY.draw();
-    this.#axisZ.draw();
+    this.#surfaces.forEach(s => s.draw(gl, program));
+    this.#axisX.draw(gl, program);
+    this.#axisY.draw(gl, program);
+    this.#axisZ.draw(gl, program);
   }
 
-  #surfaceAt(index) {
-    if (this.#surfaces[index]) return this.#surfaces[index];
+  #surfaceAt(index, color) {
+    if (this.#surfaces[index]) {
+      let options = this.#surfaces[index].options;
+      options.color = color;
+      this.#surfaces[index].options = options;
+      return this.#surfaces[index];
+    }
 
     this.#surfaces.push(new Surface(this.#gl, this.#program, {
       width: 1.1,
       height: 1.1,
       resolution: 0.01,
-      color: [Math.random(), Math.random(), Math.random(), 1],
+      color: color,
     }));
 
     return this.#surfaces[index];
@@ -106,10 +114,11 @@ class Controller {
   sample(zoom, expressions, xOffset, yOffset) {
     // distance from camera to origin from all sides
     expressions.forEach((expression, index) => {
-      const tokens = scan(expression === '' ? '0' : expression);
+      const tokens = scan(expression.formula === '' ? '0' : expression.formula);
       const ast = parse(tokens);
 
-      const points = this.#surfaceAt(index).points;
+      const normalizedColor = [expression.color.r / 255.0, expression.color.g / 255.0, expression.color.b / 255.0, 1];
+      const points = this.#surfaceAt(index, normalizedColor).points;
 
       const z = Math.max(20 * (1 - zoom / 100.0), 0.01);
       for (let i = 0; i < points.length; i += 4) {
@@ -118,6 +127,9 @@ class Controller {
           interpret(ast, z * points[i] + xOffset, z * points[i + 1] + yOffset);
       }
     });
+
+    //remove unused surfaces
+    this.#surfaces = this.#surfaces.slice(0, expressions.length);
 
     this.render();
   }
