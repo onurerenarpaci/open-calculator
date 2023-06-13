@@ -155,6 +155,9 @@ export const parse = (tokens) => {
 
             consume();
             return node;
+        }else if(token.type === TokenType.MINUS){
+            consume();
+            return {type: 'negate', value: parsePrimary()};
         }else{
             throw new Error('Expecting number or identifier');
         }
@@ -256,6 +259,8 @@ export const codegen = (node) => {
                     args += ', ';
             }
             return node.name + '(' + args + ')';
+        }else if(node.type === 'negate'){
+            return '-' + gen(node.value);
         }
     }
 
@@ -292,10 +297,16 @@ export const interpret = (node, x, y) => {
         }else if(node.type === 'assign'){
             if(node.name !== 'z')
                 throw new Error('You should either define a custom function or use z!' + node.name);
-
             return interp(node.value);
+        }else if(node.type === 'negate'){
+            return -interp(node.value);
         }
     }
 
     return interp(node);
 }
+
+const program = "x + sin(y**2)";
+const ast = parse(scan(program));
+const code = codegen(ast);
+console.log(code);
